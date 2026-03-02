@@ -1,26 +1,27 @@
 name: build
-on: push
+on: [push]
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '6.0.x'
-
-      - name: Build ESP
+      - name: Get UnityEngine DLL
         run: |
           powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
-          dotnet new classlib -n Project -f net6.0 --force
-          move-item ESP.cs Class1.cs -Force
-          dotnet add Project.csproj reference UnityEngine.dll
-          dotnet build Project.csproj -c Release
+
+      - name: Create Project File
+        run: |
+          # 2026年の最新環境でも絶対に通る、超シンプルなプロジェクト設定を書き込むぜ
+          Set-Content -Path Project.csproj -Value '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>netstandard2.1</TargetFramework></PropertyGroup><ItemGroup><Reference Include="UnityEngine"><HintPath>./UnityEngine.dll</HintPath></Reference></ItemGroup></Project>'
+
+      - name: Build
+        run: |
+          # ESP.cs を読み込んで DLL を作るぜ
+          dotnet build -c Release
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: DLL
-          path: bin/Release/net6.0/Project.dll
+          path: bin/Release/netstandard2.1/Project.dll
