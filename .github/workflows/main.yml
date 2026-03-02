@@ -6,21 +6,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '6.x'
-
       - name: Download UnityEngine DLL
         run: |
           powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
 
-      - name: Build Project
+      - name: Create CSharp Project
         run: |
-          dotnet new classlib -n Project -o . --force
-          move-item -path ESP.cs -destination ./Class1.cs -force
-          dotnet add System.Drawing.Common.dll --package 6.0.0 || echo "skip"
-          dotnet build -c Release /p:ReferencePath=./UnityEngine.dll
+          # プロジェクトファイルを直接生成して、参照をガチガチに固定するぜ
+          echo '<Project Sdk="Microsoft.NET.Sdk">' > Project.csproj
+          echo '  <PropertyGroup>' >> Project.csproj
+          echo '    <TargetFramework>net6.0</TargetFramework>' >> Project.csproj
+          echo '    <ImplicitUsings>enable</ImplicitUsings>' >> Project.csproj
+          echo '    <Nullable>enable</Nullable>' >> Project.csproj
+          echo '  </PropertyGroup>' >> Project.csproj
+          echo '  <ItemGroup>' >> Project.csproj
+          echo '    <Reference Include="UnityEngine">' >> Project.csproj
+          echo '      <HintPath>./UnityEngine.dll</HintPath>' >> Project.csproj
+          echo '    </Reference>' >> Project.csproj
+          echo '  </ItemGroup>' >> Project.csproj
+          echo '</Project>' >> Project.csproj
+
+      - name: Build with Dotnet
+        run: |
+          dotnet build -c Release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
