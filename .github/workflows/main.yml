@@ -1,18 +1,26 @@
 name: build
-on: [push]
+on: push
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Build
-        shell: cmd
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Build ESP
         run: |
           powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
-          csc /target:library /out:Project.dll /reference:UnityEngine.dll ESP.cs
-          
-      - uses: actions/upload-artifact@v4
+          dotnet new classlib -n Project -f net6.0 --force
+          move-item ESP.cs Class1.cs -Force
+          dotnet add Project.csproj reference UnityEngine.dll
+          dotnet build Project.csproj -c Release
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
         with:
           name: DLL
-          path: Project.dll
+          path: bin/Release/net6.0/Project.dll
