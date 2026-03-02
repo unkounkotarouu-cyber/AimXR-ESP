@@ -1,14 +1,27 @@
 name: build
-on: push
+on: [push]
 jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
-    - run: |
-        powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
-        csc /target:library /out:Project.dll /reference:UnityEngine.dll ESP.cs
-    - uses: actions/upload-artifact@v4
-      with:
-        name: DLL
-        path: Project.dll
+      - uses: actions/checkout@v4
+      
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build ESP
+        run: |
+          powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
+          # MSBuildのパスにあるcscを直接叩くか、dotnetを使うぜ
+          dotnet build /p:Configuration=Release /p:OutputType=Library /p:AssemblyName=Project ESP.cs /reference:UnityEngine.dll
+        continue-on-error: true
+
+      - name: Alternative Build (If dotnet fails)
+        run: |
+          & "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /target:library /out:Project.dll /reference:UnityEngine.dll ESP.cs
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DLL
+          path: Project.dll
