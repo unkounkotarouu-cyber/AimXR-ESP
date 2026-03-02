@@ -1,34 +1,22 @@
 using UnityEngine;
 
-public class AimXRESP : MonoBehaviour
+namespace AimXR
 {
-    private GUIStyle labelStyle = new GUIStyle();
-
-    void Start() {
-        labelStyle.normal.textColor = Color.red;
-        labelStyle.fontSize = 20;
-    }
-
-    void OnGUI()
+    public class ESPMod : MonoBehaviour
     {
-        // Aim XRのプレイヤーオブジェクトを探す（一般的な設定）
-        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-
-        foreach (GameObject player in players)
+        void OnGUI()
         {
-            // 自分自身は除外（必要に応じて）
+            GUI.Label(new Rect(10, 10, 200, 20), "ESP Loaded");
             
-            Vector3 screenPos = Camera.main.WorldToScreenPoint(player.transform.position);
-
-            if (screenPos.z > 0)
+            GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+            foreach (GameObject player in players)
             {
-                float x = screenPos.x;
-                float y = Screen.height - screenPos.y;
-
-                // 敵の位置に「赤枠」と「距離」を表示
-                GUI.color = Color.red;
-                GUI.Box(new Rect(x - 25, y - 25, 50, 50), ""); 
-                GUI.Label(new Rect(x - 25, y - 45, 100, 20), "ENEMY [" + Mathf.Round(screenPos.z) + "m]", labelStyle);
+                Vector3 pos = Camera.main.WorldToScreenPoint(player.transform.position);
+                if (pos.z > 0)
+                {
+                    GUI.color = Color.red;
+                    GUI.Box(new Rect(pos.x - 10, Screen.height - pos.y - 10, 20, 20), "Target");
+                }
             }
         }
     }
