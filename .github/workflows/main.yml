@@ -6,32 +6,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download UnityEngine DLL
+      - name: Get Libs
         run: |
           powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
+          powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.IMGUIModule.dll' -OutFile 'UnityEngine.IMGUIModule.dll'"
 
-      - name: Create CSharp Project
+      - name: Locate CSC and Build
         run: |
-          # プロジェクトファイルを直接生成して、参照をガチガチに固定するぜ
-          echo '<Project Sdk="Microsoft.NET.Sdk">' > Project.csproj
-          echo '  <PropertyGroup>' >> Project.csproj
-          echo '    <TargetFramework>net6.0</TargetFramework>' >> Project.csproj
-          echo '    <ImplicitUsings>enable</ImplicitUsings>' >> Project.csproj
-          echo '    <Nullable>enable</Nullable>' >> Project.csproj
-          echo '  </PropertyGroup>' >> Project.csproj
-          echo '  <ItemGroup>' >> Project.csproj
-          echo '    <Reference Include="UnityEngine">' >> Project.csproj
-          echo '      <HintPath>./UnityEngine.dll</HintPath>' >> Project.csproj
-          echo '    </Reference>' >> Project.csproj
-          echo '  </ItemGroup>' >> Project.csproj
-          echo '</Project>' >> Project.csproj
+          # サーバー内のどこかに隠れている csc.exe を力ずくで見つけて実行するぜ
+          $cscPath = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio" -Filter "csc.exe" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          & $cscPath /target:library /out:Project.dll /reference:UnityEngine.dll /reference:UnityEngine.IMGUIModule.dll ESP.cs
 
-      - name: Build with Dotnet
-        run: |
-          dotnet build -c Release
-
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: DLL
-          path: bin/Release/net6.0/Project.dll
+          path: Project.dll
