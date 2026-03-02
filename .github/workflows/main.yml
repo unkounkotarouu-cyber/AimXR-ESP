@@ -5,27 +5,11 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '6.0.x'
-
-      - name: Get Libs
+      - name: Build
         run: |
           powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
-          powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.IMGUIModule.dll' -OutFile 'UnityEngine.IMGUIModule.dll'"
-
-      - name: Build with Dotnet
-        run: |
-          # プロジェクトファイルを1行で作ってビルドするぜ
-          dotnet new classlib -n Project -o . --force
-          move-item -path ESP.cs -destination ./Class1.cs -force
-          dotnet add reference ./UnityEngine.dll || echo "skip"
-          dotnet build -c Release
-
-      - name: Upload
-        uses: actions/upload-artifact@v4
+          csc /target:library /out:Project.dll /reference:UnityEngine.dll ESP.cs
+      - uses: actions/upload-artifact@v4
         with:
           name: DLL
-          path: bin/Release/net6.0/Project.dll
+          path: Project.dll
