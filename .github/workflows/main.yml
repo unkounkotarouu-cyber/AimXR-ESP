@@ -1,15 +1,14 @@
 name: build
-on: [push]
+on: push
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Build
-        run: |
-          powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
-          csc /target:library /out:Project.dll /reference:UnityEngine.dll ESP.cs
-      
-        
-          name: DLL
-          path: Project.dll
+    - uses: actions/checkout@v4
+    - run: |
+        powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
+        csc /target:library /out:Project.dll /reference:UnityEngine.dll ESP.cs
+    - uses: actions/upload-artifact@v4
+      with:
+        name: DLL
+        path: Project.dll
