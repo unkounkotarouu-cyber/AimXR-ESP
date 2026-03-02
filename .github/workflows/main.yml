@@ -1,0 +1,27 @@
+name: Build ESP DLL
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: Build DLL
+      run: |
+        csc /target:library /out:Project.dll /reference:UnityEngine.dll ESP.cs
+      # ※本来はUnityのパス指定が必要だが、まずはこれでエラーが出るか試すぜ
+
+    - name: Upload Artifact
+      uses: upload-artifact@v3
+      with:
+        name: AimXR-ESP-DLL
+        path: Project.dll
