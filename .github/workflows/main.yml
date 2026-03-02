@@ -6,22 +6,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get UnityEngine DLL
+      - name: Download Libs Safely
+        shell: powershell
         run: |
-          powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
+          # より強力なダウンロード方法に切り替えるぜ
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          Invoke-WebRequest -Uri "https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll" -OutFile "UnityEngine.dll" -UserAgent "Mozilla/5.0"
 
-      - name: Create Project File
+      - name: Build with CSC
+        shell: cmd
         run: |
-          # 2026年の最新環境でも絶対に通る、超シンプルなプロジェクト設定を書き込むぜ
-          Set-Content -Path Project.csproj -Value '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>netstandard2.1</TargetFramework></PropertyGroup><ItemGroup><Reference Include="UnityEngine"><HintPath>./UnityEngine.dll</HintPath></Reference></ItemGroup></Project>'
-
-      - name: Build
-        run: |
-          # ESP.cs を読み込んで DLL を作るぜ
-          dotnet build -c Release
+          # サーバー内の最新パスを直接指定して、逃げ道をなくすぜ
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\Roslyn\csc.exe" /target:library /out:Project.dll /reference:UnityEngine.dll ESP.cs
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: DLL
-          path: bin/Release/netstandard2.1/Project.dll
+          path: Project.dll
