@@ -5,23 +5,25 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
 
-      - name: Build ESP
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.x'
+
+      - name: Download UnityEngine DLL
         run: |
           powershell -Command "Invoke-WebRequest -Uri 'https://github.com/EvaisaAM/Unity-Internal-Libraries/raw/master/UnityEngine.dll' -OutFile 'UnityEngine.dll'"
-          # MSBuildのパスにあるcscを直接叩くか、dotnetを使うぜ
-          dotnet build /p:Configuration=Release /p:OutputType=Library /p:AssemblyName=Project ESP.cs /reference:UnityEngine.dll
-        continue-on-error: true
 
-      - name: Alternative Build (If dotnet fails)
+      - name: Build Project
         run: |
-          & "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /target:library /out:Project.dll /reference:UnityEngine.dll ESP.cs
+          dotnet new classlib -n Project -o . --force
+          move-item -path ESP.cs -destination ./Class1.cs -force
+          dotnet add System.Drawing.Common.dll --package 6.0.0 || echo "skip"
+          dotnet build -c Release /p:ReferencePath=./UnityEngine.dll
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: DLL
-          path: Project.dll
+          path: bin/Release/net6.0/Project.dll
